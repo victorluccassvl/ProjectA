@@ -14,12 +14,14 @@ public class ControlledMovement : MonoBehaviour
 
     private Rigidbody _rigidbody = null;
 
-    private float _moveAlignedAxisInput;
+
     private float _moveSidewaysAxisInput;
+    private float _moveAlignedAxisInput;
     private float _runAlignedAxisInput;
 
-    private float _cumulatedAlignedDelocation = 0f;
+
     private float _cumulatedSidewaysDelocation = 0f;
+    private float _cumulatedAlignedDelocation = 0f;
 
     private void Awake()
     {
