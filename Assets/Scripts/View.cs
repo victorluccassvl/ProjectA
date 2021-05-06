@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
-public class ControlledView : MonoBehaviour
+public class View : MonoBehaviour
 {
     [SerializeField]
     private Transform _target = null;
@@ -65,7 +65,6 @@ public class ControlledView : MonoBehaviour
 
         transform.RotateAround(_targetRealPosition, transform.right, -_rotateCameraAlignedInput);
 
-
         // If rotation extrapolates defined values, revert modifications
         float currentAngle = Vector3.Angle(transform.forward, Vector3.ProjectOnPlane(transform.forward, Vector3.up));
         if (currentAngle > _maxCameraAlignedMovementFreedom / 2f)
@@ -79,6 +78,7 @@ public class ControlledView : MonoBehaviour
     {
         transform.RotateAround(_targetRealPosition, Vector3.up, _rotateCameraSidewaysInput);
 
+        // May need to change in the future if the player interacts with slopes
         _target.forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
     }
 
