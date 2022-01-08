@@ -9,7 +9,6 @@ public class Player : MonoBehaviour
     private OccultoIndetectable _indetectable = null;
 
     private Movement _movement = null;
-    private Jump _jump = null;
     private View _view = null;
     private Target _target = null;
 
@@ -27,7 +26,6 @@ public class Player : MonoBehaviour
         _indetectable = GetComponentInChildren<OccultoIndetectable>(true);
 
         _movement = GetComponentInChildren<Movement>(true);
-        _jump     = GetComponentInChildren<Jump>(true);
         _view     = GetComponentInChildren<View>(true);
         _target   = GetComponentInChildren<Target>(true);
 
@@ -40,7 +38,6 @@ public class Player : MonoBehaviour
         allComponentsSet &= _indetectable != null;
 
         allComponentsSet &= _movement != null;
-        allComponentsSet &= _jump != null;
         allComponentsSet &= _view != null;
         allComponentsSet &= _target != null;
 

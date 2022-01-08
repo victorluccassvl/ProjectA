@@ -1,6 +1,7 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(PhysicsProperties))]
 public class Movement : MonoBehaviour
 {
     [SerializeField]
@@ -12,37 +13,43 @@ public class Movement : MonoBehaviour
     [SerializeField]
     private float _runExtraVirtualSpeed = 4f;
     [SerializeField]
-    private LayerMask _layersThatBlockMovement;
-    [SerializeField]
-    private float _distanceUnableToMoveTowards = 0.7f;
-    [SerializeField]
-    private float _toleranceAngleToBeConsideredVerticalWall = 0.5f;
+    private float _jumpSpeed = 10f;
 
-    private Rigidbody _rigidbody = null;
+    [Space]
+    [SerializeField]
+    private Transform _groundChecker = null;
+    [SerializeField]
+    private float _groundDistance = 0.15f;
+    [SerializeField]
+    private LayerMask _groundMask;
+
+    private CharacterController _characterController = null;
+    private PhysicsProperties _physicsProperties = null;
+
+    private float _verticalVelocity = 0f;
 
     private float _moveSidewaysAxisInput;
     private float _moveAlignedAxisInput;
     private float _runAlignedAxisInput;
-    private float _defaultMass;
-
-    private float _cumulatedSidewaysDelocation = 0f;
-    private float _cumulatedAlignedDelocation = 0f;
+    private bool _jumpInput;
 
     private void Awake()
     {
-        _rigidbody = GetComponent<Rigidbody>();
-        _defaultMass = _rigidbody.mass;
+        _characterController = GetComponent<CharacterController>();
+        _physicsProperties = GetComponent<PhysicsProperties>();
     }
 
     private void Update()
     {
         GetInputs();
-        AcumulateDelocation();
+        UpdateVerticalVelocity();
+        Move(CalculateDelocation());
     }
 
-    private void FixedUpdate()
+    private void OnDrawGizmos()
     {
-        OperatePhysicsMovement(MovementPostValidation());
+        Gizmos.color = Color.green;
+        Gizmos.DrawSphere(_groundChecker.position, _groundDistance);
     }
 
     private void GetInputs()
@@ -50,40 +57,47 @@ public class Movement : MonoBehaviour
         _moveAlignedAxisInput  = Input.GetAxis("Move Aligned");
         _moveSidewaysAxisInput = Input.GetAxis("Move Sideways");
         _runAlignedAxisInput   = Input.GetAxis("Run Aligned");
+        _jumpInput             = Input.GetButtonDown("Jump");
     }
 
-    private void AcumulateDelocation()
+    private void UpdateVerticalVelocity()
     {
-        if (_moveAlignedAxisInput > 0f)
-            _cumulatedAlignedDelocation += _moveAlignedAxisInput * (_forwardVirtualSpeed  + (_runExtraVirtualSpeed * _runAlignedAxisInput)) * Time.deltaTime;
-        else                           
-            _cumulatedAlignedDelocation += _moveAlignedAxisInput * _backwardVirtualSpeed * Time.deltaTime;
+        bool isGrounded = Physics.CheckSphere(_groundChecker.position, _groundDistance, _groundMask);
 
-        _cumulatedSidewaysDelocation += _moveSidewaysAxisInput * _sidewayVirtualSpeed * Time.deltaTime;
-    }
-
-    private Vector3 MovementPostValidation()
-    {
-        Vector3 delocation = Vector3.zero;
-        delocation += _cumulatedAlignedDelocation * transform.forward;
-        delocation += _cumulatedSidewaysDelocation * transform.right;
-        delocation *= _defaultMass / _rigidbody.mass;
-
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, delocation, out hit, _distanceUnableToMoveTowards, _layersThatBlockMovement))
+        if (isGrounded && _verticalVelocity < 0f)
         {
-            if (Vector3.Angle(Vector3.ProjectOnPlane(hit.normal, Vector3.up), hit.normal) < _toleranceAngleToBeConsideredVerticalWall)
-                delocation = Vector3.zero;
+            if (_jumpInput)
+                _verticalVelocity = _jumpSpeed * _physicsProperties.MassRatio;
+            else
+                _verticalVelocity = 0f;
         }
 
-        return delocation;
+        _verticalVelocity += Physics.gravity.y * Time.deltaTime;
     }
 
-    private void OperatePhysicsMovement(Vector3 delocation)
+    private Vector3 CalculateDelocation()
     {
-        _rigidbody.MovePosition(transform.position + delocation);
+        Vector3 delocation = Vector3.zero;
 
-        _cumulatedAlignedDelocation = 0f;
-        _cumulatedSidewaysDelocation = 0f;
+        float alignedSpeed;
+        float sidewaysSpeed;
+
+        if (_moveAlignedAxisInput > 0f)
+            alignedSpeed = _moveAlignedAxisInput * (_forwardVirtualSpeed + (_runExtraVirtualSpeed * _runAlignedAxisInput));
+        else
+            alignedSpeed = _moveAlignedAxisInput * _backwardVirtualSpeed;
+        sidewaysSpeed = _moveSidewaysAxisInput * _sidewayVirtualSpeed;
+
+        delocation += alignedSpeed * Time.deltaTime * transform.forward;
+        delocation += sidewaysSpeed * Time.deltaTime * transform.right;
+        delocation += _verticalVelocity * Time.deltaTime * Vector3.up;
+
+        return delocation / _physicsProperties.MassRatio;
+    }
+
+    private void Move(Vector3 delocation)
+    {
+        if (delocation != Vector3.zero)
+            _characterController.Move(delocation);
     }
 }
