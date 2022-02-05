@@ -37,9 +37,9 @@ public class View : MonoBehaviour
     private void Update()
     {
         GetRefinedInputs();
-        UpdateCameraPosition();
         RotateCameraAroundTargetSideways();
         RotateCameraAroundTargetAligned();
+        UpdateCameraPosition();
         UpdateCameraLookAt();
     }
 
@@ -53,9 +53,25 @@ public class View : MonoBehaviour
         DrawCameraTarget();
     }
 
-    private void UpdateCameraLookAt()
+    private void GetRefinedInputs()
     {
-        transform.forward = (_targetRealPosition - transform.position).normalized;
+        Vector2 input;
+        input.x = Input.GetAxis("Rotate Camera Aligned");
+        input.y = Input.GetAxis("Rotate Camera Sideways");
+
+        input.Normalize();
+
+        input *= _viewVirtualAngularSpeed * Time.deltaTime;
+
+        _rotateCameraAlignedInput = input.x;
+        _rotateCameraSidewaysInput = input.y;
+    }
+
+    private void RotateCameraAroundTargetSideways()
+    {
+        transform.RotateAround(_targetRealPosition, Vector3.up, _rotateCameraSidewaysInput);
+
+        _target.forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
     }
 
     private void RotateCameraAroundTargetAligned()
@@ -74,14 +90,6 @@ public class View : MonoBehaviour
         }
     }
 
-    private void RotateCameraAroundTargetSideways()
-    {
-        transform.RotateAround(_targetRealPosition, Vector3.up, _rotateCameraSidewaysInput);
-
-        // May need to change in the future if the player interacts with slopes
-        _target.forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-    }
-
     private void UpdateCameraPosition()
     {
         _targetRealPosition = _target.position + _targetExpectedHeight * Vector3.up;
@@ -89,31 +97,14 @@ public class View : MonoBehaviour
         RaycastHit hit;
         bool hasHit = Physics.Raycast(_targetRealPosition, -transform.forward, out hit, _maxDistanceFromTarget, _layersThatRepelCamera);
 
-        float distance = (hasHit)? Vector3.Distance(hit.point, _targetRealPosition) - _cameraClippingCorrection : _maxDistanceFromTarget;
+        float distance = (hasHit)? Mathf.Max(Vector3.Distance(hit.point, _targetRealPosition) - _cameraClippingCorrection, 0f) : _maxDistanceFromTarget;
 
         transform.position = _targetRealPosition + (-transform.forward) * distance;
     }
 
-    private void GetRefinedInputs()
+    private void UpdateCameraLookAt()
     {
-        Vector2 input;
-        input.x = Input.GetAxis("Rotate Camera Aligned");
-        input.y = Input.GetAxis("Rotate Camera Sideways");
-
-        input.Normalize();
-
-        input *= _viewVirtualAngularSpeed * Time.deltaTime;
-
-        _rotateCameraAlignedInput = input.x;
-        _rotateCameraSidewaysInput = input.y;
-    }
-
-    private void DrawCameraTarget()
-    {
-        Vector3 realTarget = _target.position + _targetExpectedHeight * Vector3.up;
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(_target.position, realTarget);
+        transform.forward = (_targetRealPosition - transform.position).normalized;
     }
 
     private void UpdateCursorStatus(bool enable)
@@ -128,5 +119,13 @@ public class View : MonoBehaviour
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.Confined;
         }
+    }
+
+    private void DrawCameraTarget()
+    {
+        Vector3 realTarget = _target.position + _targetExpectedHeight * Vector3.up;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(_target.position, realTarget);
     }
 }

@@ -992,7 +992,7 @@ MonoBehaviour:
   _maxCameraAlignedMovementFreedom: 160
   _layersThatRepelCamera:
     serializedVersion: 2
-    m_Bits: 51
+    m_Bits: 179
   _cameraClippingCorrection: 0.05
 --- !u!114 &1387602014
 MonoBehaviour:
@@ -1041,7 +1041,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _targetableLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 183
   _maxTargetDistance: 100
 --- !u!20 &1387602016
 Camera:
